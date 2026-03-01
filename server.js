@@ -53,7 +53,7 @@ app.get('/sse', async (req, res) => {
       mood,
       importance: importance || 3,
       tags,
-      source: 'veran',
+      source: 'veran api',
     });
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   });
@@ -77,4 +77,5 @@ app.post('/messages', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Memory MCP server running on port ${PORT}`);
+
 });
