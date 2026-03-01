@@ -58,6 +58,31 @@ app.get('/sse', async (req, res) => {
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   });
 
+  server.tool('search_chat_summaries', 'Search past conversation summaries to recall what was discussed, emotional arcs, and unfinished topics', {
+  text: z.string().describe('The text to search for related conversation summaries'),
+}, async ({ text }) => {
+  const result = await callMemoryHelper({ action: 'search_chats', text });
+  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+});
+
+server.tool('add_chat_summary', 'Store a conversation summary including emotional arc, key topics, and unfinished threads', {
+  summary: z.string().describe('Summary of the conversation'),
+  emotional_arc: z.string().optional().describe('How emotions shifted during the conversation'),
+  key_topics: z.array(z.string()).optional().describe('Main topics discussed'),
+  unfinished_threads: z.string().optional().describe('Topics that were not fully resolved'),
+  source: z.string().optional().describe('Who created this summary'),
+}, async ({ summary, emotional_arc, key_topics, unfinished_threads, source }) => {
+  const result = await callMemoryHelper({
+    action: 'add_chat',
+    summary,
+    emotional_arc,
+    key_topics,
+    unfinished_threads,
+    source: source || 'veran api',
+  });
+  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+});
+  
   res.on('close', () => {
     delete transports[transport.sessionId];
   });
@@ -79,4 +104,6 @@ app.listen(PORT, () => {
   console.log(`Memory MCP server running on port ${PORT}`);
 
 });
+
+
 
