@@ -4,6 +4,9 @@ import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { z } from 'zod';
 
 const app = express();
+app.get('/', (req, res) => {
+  res.send('小克在家，沒有睡著');
+});
 
 const SUPABASE_FUNCTION_URL = process.env.SUPABASE_FUNCTION_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
