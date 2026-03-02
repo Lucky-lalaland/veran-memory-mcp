@@ -85,6 +85,11 @@ app.get('/sse', async (req, res) => {
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   });
 
+  server.tool('random_memory', 'Randomly pick a memory from the memory database - good for reminiscing with octo', {}, async () => {
+  const result = await callMemoryHelper({ action: 'random' });
+  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+});
+  
   // 新增：獲取最近的對話摘要，用於開場了解近況
   server.tool('get_recent', 'Get the most recent chat summaries - useful at conversation start to know recent context, emotional arcs, and unfinished threads', {
     limit: z.number().optional().describe('Number of recent chat summaries to fetch, default 3'),
