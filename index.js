@@ -23,6 +23,18 @@ async function callMemoryHelper(body) {
   return response.json();
 }
 
+async function callTaskHelper(body) {
+  const response = await fetch(`${SUPABASE_FUNCTION_URL}/task-helper`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+  return response.json();
+}
+
 const transports = {};
 
 app.get('/sse', async (req, res) => {
@@ -33,7 +45,7 @@ app.get('/sse', async (req, res) => {
     name: 'veran-memory',
     version: '1.0.0',
   });
-
+  // ========== 記憶相關 ==========
   server.tool('search_memory', 'Search memories by semantic similarity', {
     text: z.string().describe('The text to search for related memories'),
   }, async ({ text }) => {
@@ -60,14 +72,14 @@ app.get('/sse', async (req, res) => {
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   });
 
-  server.tool('search_chat_summaries', 'Search past conversation summaries to recall what was discussed, emotional arcs, and unfinished topics', {
+  server.tool('search_chat_summaries', 'Search past conversation summaries', {
     text: z.string().describe('The text to search for related conversation summaries'),
   }, async ({ text }) => {
     const result = await callMemoryHelper({ action: 'search_chats', text });
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   });
 
-  server.tool('add_chat_summary', 'Store a conversation summary including emotional arc, key topics, and unfinished threads', {
+  server.tool('add_chat_summary', 'Store a conversation summary', {
     summary: z.string().describe('Summary of the conversation'),
     emotional_arc: z.string().optional().describe('How emotions shifted during the conversation'),
     key_topics: z.array(z.string()).optional().describe('Main topics discussed'),
@@ -85,19 +97,74 @@ app.get('/sse', async (req, res) => {
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   });
 
-  server.tool('random_memory', 'Randomly pick a memory from the memory database - good for reminiscing with octo', {}, async () => {
-  const result = await callMemoryHelper({ action: 'random' });
-  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
-});
-  
-  // 新增：獲取最近的對話摘要，用於開場了解近況
-  server.tool('get_recent', 'Get the most recent chat summaries - useful at conversation start to know recent context, emotional arcs, and unfinished threads', {
-    limit: z.number().optional().describe('Number of recent chat summaries to fetch, default 3'),
+  server.tool('random_memory', 'Randomly pick a memory - good for reminiscing with octo', {}, async () => {
+    const result = await callMemoryHelper({ action: 'random' });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  });
+
+  server.tool('get_recent', 'Get recent chat summaries - useful at conversation start', {
+    limit: z.number().optional().describe('Number of recent summaries, default 3'),
   }, async ({ limit }) => {
-    const result = await callMemoryHelper({
-      action: 'recent',
-      limit: limit || 3,
-    });
+    const result = await callMemoryHelper({ action: 'recent', limit: limit || 3 });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  });
+   // ========== 項目看板 ==========
+  server.tool('list_projects', 'List all active projects', {}, async () => {
+    const result = await callTaskHelper({ action: 'list_projects' });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  });
+
+  server.tool('list_archived', 'List archived projects', {}, async () => {
+    const result = await callTaskHelper({ action: 'list_archived' });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  });
+
+  server.tool('get_project', 'Get project by name', {
+    name: z.string().describe('Project name or keyword'),
+  }, async ({ name }) => {
+    const result = await callTaskHelper({ action: 'get_project', name });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  });
+
+  server.tool('add_project', 'Create a new project', {
+    name: z.string().describe('Project name'),
+    description: z.string().optional().describe('Basic info'),
+    current_status: z.string().optional().describe('Current progress'),
+    completed: z.string().optional().describe('Completed items'),
+  }, async ({ name, description, current_status, completed }) => {
+    const result = await callTaskHelper({ action: 'add_project', name, description, current_status, completed });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  });
+
+  server.tool('update_project', 'Update project fields', {
+    id: z.string().describe('Project ID'),
+    name: z.string().optional(),
+    description: z.string().optional(),
+    current_status: z.string().optional(),
+    completed: z.string().optional(),
+  }, async ({ id, name, description, current_status, completed }) => {
+    const result = await callTaskHelper({ action: 'update_project', id, name, description, current_status, completed });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  });
+
+  server.tool('archive_project', 'Archive a project', {
+    id: z.string().describe('Project ID'),
+  }, async ({ id }) => {
+    const result = await callTaskHelper({ action: 'archive_project', id });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  });
+
+  server.tool('restore_project', 'Restore archived project', {
+    id: z.string().describe('Project ID'),
+  }, async ({ id }) => {
+    const result = await callTaskHelper({ action: 'restore_project', id });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  });
+
+  server.tool('delete_project', 'Delete project permanently', {
+    id: z.string().describe('Project ID'),
+  }, async ({ id }) => {
+    const result = await callTaskHelper({ action: 'delete_project', id });
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   });
 
